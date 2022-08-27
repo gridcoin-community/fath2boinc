@@ -1,2 +1,1 @@
 d /var/lib/fath2boinc 0755 fath2boinc http - -
-d /var/lib/fath2boinc/stats 0755 fath2boinc http - -
