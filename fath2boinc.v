@@ -130,7 +130,8 @@ fn main() {
 
     for line in os.read_lines(os.args[2])? {
         parts := line.split("\t")
-        full_name := parts[0]
+        // Basic input sanitatization. Protects against XML and CSV injections.
+        full_name := parts[0].replace(",", "").replace("<", "").replace(">", "")
         if parts.len != 4 || full_name == "name" {
             continue
         }
