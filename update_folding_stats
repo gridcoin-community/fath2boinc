@@ -6,7 +6,6 @@ BOINCSTATSDIR=${BOINCSTATSDIR:-/usr/share/nginx/html}
 mkdir -p "$DATADIR"
 mkdir -p "$BOINCSTATSDIR"
 
-curl -fsSL https://apps.foldingathome.org/daily_user_summary.txt.bz2 | bunzip2 > daily_user_summary.txt
-fath2boinc "$DATADIR/users.csv" daily_user_summary.txt "$BOINCSTATSDIR/user"
-rm daily_user_summary.txt
+curl -fsSL https://apps.foldingathome.org/daily_user_summary.txt.bz2 | bunzip2 > "$DATADIR/daily_user_summary.txt"
+fath2boinc "$DATADIR/users.csv" "$DATADIR/daily_user_summary.txt" "$BOINCSTATSDIR/user"
 gzip "$BOINCSTATSDIR/user"
