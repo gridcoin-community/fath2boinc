@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 DATADIR=${DATADIR:-/var/lib/fath2boinc}
 BOINCSTATSDIR=${BOINCSTATSDIR:-/usr/share/nginx/html}
 
