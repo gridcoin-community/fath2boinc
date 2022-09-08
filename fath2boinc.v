@@ -89,7 +89,7 @@ fn (mut user User) update_stats(new_total_credit f64, now f64) {
 
 fn main() {
     if os.args.len != 4 {
-        eprintln("USAGE: f@h2boinc <local data path> <f@h data path> <boinc data path>")
+        eprintln("USAGE: fath2boinc <local data path> <f@h data path> <boinc data path>")
         exit(1)
     }
     now := f64(time.utc().unix_time_milli()) / 1000.0
