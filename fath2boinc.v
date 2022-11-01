@@ -128,7 +128,7 @@ fn main() {
 
     println("Loaded $count entries from local user data.")
 
-    for line in os.read_lines(os.args[2])? {
+    for line in os.read_lines(os.args[2])! {
         parts := line.split("\t")
         // Basic input sanitatization. Protects against XML and CSV injections.
         full_name := parts[0].replace(",", "").replace("<", "").replace(">", "")
@@ -183,8 +183,8 @@ fn main() {
         highest_rac.to_xml(mut b)
     }
     b.writeln("</users>")
-    os.write_file(os.args[3] + '~', b.str())?
-    os.mv(os.args[3] + '~', os.args[3])?
+    os.write_file(os.args[3] + '~', b.str())!
+    os.mv(os.args[3] + '~', os.args[3])!
     println("Updated boinc statistics.")
 
     for _, entries in users {
@@ -192,7 +192,7 @@ fn main() {
             entry.to_csv(mut b)
         }
     }
-    os.write_file(os.args[1] + '~', b.str())?
-    os.mv(os.args[1] + '~', os.args[1])?
+    os.write_file(os.args[1] + '~', b.str())!
+    os.mv(os.args[1] + '~', os.args[1])!
     println("Updated local statistics.")
 }
