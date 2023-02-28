@@ -3,6 +3,20 @@ import os
 import strings
 import time
 
+fn is_md5_hex(data string) bool {
+    if data.len != 32 {
+        return false
+    }
+
+    for c in data {
+        if !c.is_hex_digit() {
+            return false
+        }
+    }
+
+    return true
+}
+
 [heap]
 pub struct User {
 pub:
@@ -122,13 +136,8 @@ fn main() {
         cpid := name_parts[name_parts.len - 1]
         // name_parts are checked from the back to allow underscores
         // in names.
-        if name_parts[name_parts.len - 2] != "GRC" || cpid.len != 32 {
+        if name_parts[name_parts.len - 2] != "GRC" || !is_md5_hex(cpid) {
             continue
-        }
-        for c in cpid {
-            if !c.is_hex_digit() {
-                continue
-            }
         }
 
         score := parts[1].f64()
