@@ -6,7 +6,6 @@ import time
 [heap]
 pub struct User {
 pub:
-    name string
     cpid string
 pub mut:
     total_credit f64 = 0.0
@@ -16,13 +15,6 @@ pub mut:
 
 fn (user &User) to_xml(mut b strings.Builder) {
     b.writeln("<user>")
-
-    // Names are specifically not exported to prevent
-    // beacon verifications.
-    //
-    //b.write_string("<name>")
-    //b.write_string(u.name)
-    //b.writeln("</name>")
 
     b.write_string("<total_credit>")
     b.write_string("${user.total_credit:.8f}")
@@ -44,9 +36,6 @@ fn (user &User) to_xml(mut b strings.Builder) {
 }
 
 fn (user &User) to_csv(mut b strings.Builder) {
-    b.write_string(user.name)
-    b.write_byte(`,`)
-
     b.write_string("${user.total_credit:.8f}")
     b.write_byte(`,`)
 
@@ -98,29 +87,19 @@ fn main() {
     // which can be shared with other users. To prove ownership we
     // require the usernames to be in format of <name>_GRC_<cpid>.
     //
-    // Since the name portion is customizable, a malicious actor
-    // can try to prevent funds from being sent to a user by trying
-    // hijack the CPID. Because of that, we store an array of users
-    // per cpid instead, and use the RAC of the user with the most RAC
-    // for the calculations.
-    //
-    // There's also a similar issue with using an username like
-    // <name>_GRC_<cpid>@<domain>.<tld> will be turned into <name>_GRC_
-    // <cpid> and will be a duplicate entry if there's already an account
-    // with that name. In that case we use the entry with the higher
-    // score.
-    mut users := map[string][]&User{}
+    // If there are multiple users with the same CPID, the points
+    // are summed regardless of if their names are different or not.
+    mut users := map[string]&User{}
 
     mut count := 0
     // Reload users from file for RAC calculations.
     for line in os.read_lines(os.args[1]) or { [] } {
         parts := line.split(",")
-        users[parts[4]] << &User{
-            name: parts[0]
-            total_credit: parts[1].f64()
-            expavg_credit: parts[2].f64()
-            expavg_time: parts[3].f64()
-            cpid: parts[4]
+        users[parts[3]] = &User{
+            total_credit: parts[0].f64()
+            expavg_credit: parts[1].f64()
+            expavg_time: parts[2].f64()
+            cpid: parts[3]
         }
 
         count += 1
@@ -128,6 +107,7 @@ fn main() {
 
     println("Loaded $count entries from local user data.")
 
+    mut new_credits := map[string]f64{}
     for line in os.read_lines(os.args[2])! {
         parts := line.split("\t")
         // Basic input sanitatization. Protects against XML and CSV injections.
@@ -139,7 +119,6 @@ fn main() {
         if name_parts.len < 3 {
             continue
         }
-        name := name_parts#[..-2].join("_")
         cpid := name_parts[name_parts.len - 1]
         // name_parts are checked from the back to allow underscores
         // in names.
@@ -151,20 +130,17 @@ fn main() {
                 continue
             }
         }
+
         score := parts[1].f64()
+        new_credits[cpid] = new_credits[cpid] or { 0.0 } + score
+    }
+
+    for cpid, score in new_credits {
         if cpid !in users {
-            users[cpid] = [&User{name: name cpid: cpid total_credit: score expavg_time: now}]
+            users[cpid] = &User{cpid: cpid total_credit: score expavg_time: now}
         } else {
-            mut name_exists := false
-            for mut user in users[cpid] {
-                if user.name == name {
-                    user.update_stats(score, now)
-                    name_exists = true
-                }
-            }
-            if !name_exists {
-                users[cpid] << &User{name: name cpid: cpid total_credit: score expavg_time: now}
-            }
+            mut user := users[cpid] or { panic("This should never happen.") }
+            user.update_stats(score, now)
         }
     }
 
@@ -173,24 +149,16 @@ fn main() {
     mut b := strings.new_builder(128 * (count + 4))
     b.writeln("<?xml version='1.0'?>")
     b.writeln("<users>")
-    for _, entries in users {
-        mut highest_rac := &User{expavg_credit: -1.0}
-        for entry in entries {
-            if entry.expavg_credit > highest_rac.expavg_credit {
-                highest_rac = entry
-            }
-        }
-        highest_rac.to_xml(mut b)
+    for _, user in users {
+        user.to_xml(mut b)
     }
     b.writeln("</users>")
     os.write_file(os.args[3] + '~', b.str())!
     os.mv(os.args[3] + '~', os.args[3])!
     println("Updated boinc statistics.")
 
-    for _, entries in users {
-        for entry in entries {
-            entry.to_csv(mut b)
-        }
+    for _, user in users {
+        user.to_csv(mut b)
     }
     os.write_file(os.args[1] + '~', b.str())!
     os.mv(os.args[1] + '~', os.args[1])!
