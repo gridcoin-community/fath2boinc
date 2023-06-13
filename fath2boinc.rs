@@ -166,5 +166,25 @@ fn main() -> Result<(), String> {
             .update_stats(score, now);
     }
 
+    let temp_csv_filename = args[1].to_owned() + "~";
+    let temp_xml_filename = args[3].to_owned() + "~";
+
+    {
+        let mut temp_csv = BufWriter::new(
+            File::create(&temp_csv_filename).expect("Opening CSV temp file failed."),
+        );
+        let mut temp_xml = BufWriter::new(
+            File::create(&temp_xml_filename).expect("Opening XML temp file failed."),
+        );
+
+        for user in users.values() {
+            user.to_csv(&mut temp_csv).unwrap();
+            user.to_xml(&mut temp_xml).unwrap();
+        }
+    }
+
+    std::fs::rename(temp_csv_filename, &args[1]).unwrap();
+    std::fs::rename(temp_xml_filename, &args[3]).unwrap();
+
     return Ok(());
 }
