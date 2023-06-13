@@ -19,6 +19,15 @@ struct User {
 }
 
 impl User {
+    fn new(cpid: &String) -> User {
+        return User {
+            cpid: cpid.clone(),
+            total_credit: 0.0,
+            expavg_credit: 0.0,
+            expavg_time: 0.0,
+        };
+    }
+
     fn to_xml(&self) -> String {
         return format!(
             "\
@@ -80,7 +89,7 @@ fn main() -> Result<(), String> {
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
-        .as_secs();
+        .as_secs() as f64;
 
     let mut users = HashMap::new();
 
@@ -110,6 +119,46 @@ fn main() -> Result<(), String> {
         Err(e) => {
             panic!("Could not open local data path: {}", e);
         }
+    }
+
+    let mut new_credits = HashMap::new();
+    let summary_file = File::open(&args[2]).expect("Could not open summary file.");
+
+    for line in BufReader::new(summary_file).lines().flatten() {
+        let parts: Vec<&str> = line.split('\t').collect();
+
+        let full_name = parts[0].replace([',', '<', '>'], "");
+        if parts.len() != 4 || full_name == "name" {
+            continue;
+        }
+
+        let name_parts: Vec<&str> = full_name.split('_').collect();
+        if name_parts.len() < 3 {
+            continue;
+        }
+
+        let cpid = String::from(name_parts[name_parts.len() - 1]);
+        if (name_parts[name_parts.len() - 2] != "GRC") || !is_md5_hex(&cpid) {
+            continue;
+        }
+
+        let new_score = parts[1].parse::<f64>().unwrap();
+        new_credits
+            .entry(cpid)
+            .and_modify(|score| *score += new_score)
+            .or_insert(new_score);
+    }
+
+    println!(
+        "Merging {} entries from F@H user summary data.",
+        new_credits.len()
+    );
+
+    for (cpid, score) in new_credits {
+        users
+            .entry(cpid)
+            .or_insert_with_key(User::new)
+            .update_stats(score, now);
     }
 
     return Ok(());
