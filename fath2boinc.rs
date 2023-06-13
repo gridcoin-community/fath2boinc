@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::env;
 use std::f64::consts::LN_2;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::time::SystemTime;
 
 const CREDIT_HALF_LIFE: f64 = 86400.0 * 7.0;
@@ -28,28 +28,33 @@ impl User {
         };
     }
 
-    fn to_xml(&self) -> String {
-        return format!(
+    fn to_xml(&self, buf: &mut BufWriter<File>) -> Result<(), std::io::Error> {
+        writeln!(
+            buf,
             "\
 <user>
 <total_credit>{total_credit:.8}</total_credit>
 <expavg_credit>{expavg_credit:.8}</expavg_credit>
 <expavg_time>{expavg_time:.8}</expavg_time>
 <cpid>{cpid}</cpid>
-</user>
-",
+</user>",
             total_credit = self.total_credit,
             expavg_credit = self.expavg_credit,
             expavg_time = self.expavg_time,
             cpid = self.cpid
-        );
+        )?;
+
+        return Ok(());
     }
 
-    fn to_csv(&self) -> String {
-        return format!(
-            "{0:.8},{1:.8},{2:.8},{3}\n",
+    fn to_csv(&self, buf: &mut BufWriter<File>) -> Result<(), std::io::Error> {
+        writeln!(
+            buf,
+            "{0:.8},{1:.8},{2:.8},{3}",
             self.total_credit, self.expavg_credit, self.expavg_time, self.cpid
-        );
+        )?;
+
+        return Ok(());
     }
 
     fn update_stats(&mut self, new_total_credit: f64, now: f64) {
