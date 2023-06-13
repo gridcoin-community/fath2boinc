@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::env;
+use std::f64::consts::LN_2;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::time::SystemTime;
 
-const LN2: f64 = 0.693147180559945309417;
 const CREDIT_HALF_LIFE: f64 = 86400.0 * 7.0;
 
 fn is_md5_hex(data: &String) -> bool {
@@ -64,13 +64,13 @@ impl User {
         if self.expavg_time > 0.0 {
             let diff = f64::max(now - self.expavg_time, 0.0);
             let diff_days = diff / 86400.0;
-            let weight = (-diff * LN2 / CREDIT_HALF_LIFE).exp();
+            let weight = (-diff * LN_2 / CREDIT_HALF_LIFE).exp();
 
             self.expavg_credit *= weight;
             if (1.0 - weight) > 0.000001 {
                 self.expavg_credit += (1.0 - weight) * (work / diff_days);
             } else {
-                self.expavg_credit += LN2 * work * 86400.0 / CREDIT_HALF_LIFE;
+                self.expavg_credit += LN_2 * work * 86400.0 / CREDIT_HALF_LIFE;
             }
         }
 
