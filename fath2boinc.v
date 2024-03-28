@@ -68,10 +68,7 @@ const credit_half_life = 86400 * 7
 fn (mut user User) update_stats(new_total_credit f64, now f64) {
     // Based on BOINC RAC calculations.
     // See https://github.com/BOINC/boinc/blob/73a7754e7fd1ae3b7bf337e8dd42a7a0b42cf3d2/html/inc/credit.inc#L24
-    work := new_total_credit - user.total_credit
-    if work < 0 {
-        return
-    }
+    work := math.max(new_total_credit - user.total_credit, 0.0)
     user.total_credit = new_total_credit
 
     if user.expavg_time > 0.0 {
