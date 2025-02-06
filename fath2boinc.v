@@ -92,7 +92,7 @@ fn main() {
         eprintln("USAGE: fath2boinc <local data path> <f@h data path> <boinc data path>")
         exit(1)
     }
-    now := f64(time.utc().unix_time_milli()) / 1000.0
+    now := f64(time.utc().unix_milli()) / 1000.0
 
     // F@H's bulk user statistics export only contains an username
     // which can be shared with other users. To prove ownership we
